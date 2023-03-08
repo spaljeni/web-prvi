@@ -1,0 +1,72 @@
+﻿@page "/osobe"
+@using WebApiPovezivanje.Models;
+@inject HttpClient httpClient;
+@inject NavigationManager navManager;
+
+<h3>ListaOsoba</h3>
+<input type="text" @bind-value="search" placeholder="upiši za pretragu" />
+<button @onclick="Trazi">pretraži</button>
+<button @onclick="Lista">Dohvati sve</button>
+<button @onclick="Dodaj">Dodaj novu Osobu</button>
+<ul>
+    @foreach(var item in osobe)
+    {
+        <li>@item.Ime @item.Prezime  @item.Id
+            <button @onclick="()=>Detalji(item.Id)" >Detalji</button>
+            <button @onclick="()=>Uredi(item.Id)">Uredi Osobu</button>
+            <button @onclick="()=>Obrisi(item.Id)">Obriši Osobu</button>
+        </li>
+    }
+</ul>
+
+@code {
+    public List<Osoba> osobe = new List<Osoba>();
+    public string search = "";
+    protected override async Task OnInitializedAsync()
+    {
+        osobe = await DohvatiListuAsync();
+    }
+
+
+
+
+
+
+    public async Task<List<Osoba>>DohvatiListuAsync()
+    {
+        List<Osoba> OsobeSaServera = new List<Osoba>();
+        var result = await httpClient.GetAsync("https://expertvjezbeapi.azurewebsites.net/api/Osobes");
+        if (result.IsSuccessStatusCode)
+        {
+            OsobeSaServera = await result.Content.ReadFromJsonAsync<List<Osoba>>();
+            OsobeSaServera = OsobeSaServera.OrderByDescending(x => x.Id).ToList();
+        }
+        return OsobeSaServera;
+    }
+    public async Task Lista()
+    {
+        osobe = await DohvatiListuAsync();
+    }
+
+    public async Task Trazi()
+    {
+        osobe = osobe.Where(x => x.Ime.ToLower().Contains(search.ToLower()) || x.Prezime.ToLower().Contains(search.ToLower())).ToList();
+    }
+
+    protected void Detalji(int idOsobe)
+    {
+        navManager.NavigateTo($"detalji/{idOsobe}");
+    }
+    protected void Uredi(int idOsobe)
+    {
+        navManager.NavigateTo($"edit/{idOsobe}");
+    }
+    protected void Dodaj()
+    {
+        navManager.NavigateTo($"dodaj");
+    }
+    protected void Obrisi(int idOsobe)
+    {
+        navManager.NavigateTo($"delete/{idOsobe}");
+    }
+}
